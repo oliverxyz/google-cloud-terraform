@@ -23,3 +23,13 @@ variable "network" {
     proxy_only_cidr = string
   })
 }
+
+variable "database" {
+  description = "Size and availability of the Cloud SQL instance."
+  type = object({
+    tier              = string
+    availability_type = string
+    disk_size_gb      = number
+    backups_enabled   = bool
+  })
+}

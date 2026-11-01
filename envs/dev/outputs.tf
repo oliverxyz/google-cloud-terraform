@@ -8,6 +8,16 @@ output "secret_names" {
   value       = module.secrets.secret_names
 }
 
+output "database" {
+  description = "Connection details of the database. The password stays in Secret Manager."
+  value = {
+    instance_name = module.database.instance_name
+    endpoint_ip   = module.database.endpoint_ip
+    database_name = module.database.database_name
+    user_name     = module.database.user_name
+  }
+}
+
 output "data_bucket" {
   description = "Name of the data bucket."
   value       = module.storage.bucket_name

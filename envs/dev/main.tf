@@ -36,6 +36,25 @@ module "secrets" {
   }
 }
 
+module "database" {
+  source = "../../modules/database"
+
+  project_id         = var.project_id
+  environment        = var.environment
+  region             = var.region
+  network_id         = module.network.network_id
+  subnet_id          = module.network.database_subnet_id
+  password_secret_id = module.secrets.secret_ids["db-password"]
+
+  tier              = var.database.tier
+  availability_type = var.database.availability_type
+  disk_size_gb      = var.database.disk_size_gb
+  backups_enabled   = var.database.backups_enabled
+
+  # The password is read from the secret, so its version has to exist first.
+  depends_on = [module.secrets]
+}
+
 module "storage" {
   source = "../../modules/storage"
 

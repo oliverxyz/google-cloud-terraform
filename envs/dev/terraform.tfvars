@@ -9,3 +9,10 @@ network = {
   proxy_only_cidr = "10.10.12.0/23"
   pods_cidr       = "10.10.128.0/17"
 }
+
+database = {
+  tier              = "db-f1-micro"
+  availability_type = "ZONAL"
+  disk_size_gb      = 10
+  backups_enabled   = false
+}
