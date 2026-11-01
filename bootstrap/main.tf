@@ -2,9 +2,11 @@ locals {
   # Kept enabled after an environment is destroyed: enabled APIs have no idle cost.
   required_services = toset([
     "artifactregistry.googleapis.com",
+    "certificatemanager.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "compute.googleapis.com",
     "container.googleapis.com",
+    "dns.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "pubsub.googleapis.com",
@@ -56,6 +58,18 @@ resource "google_storage_bucket" "terraform_state" {
   soft_delete_policy {
     retention_duration_seconds = 0
   }
+
+  depends_on = [google_project_service.required]
+}
+
+# Outlives environments: a recreated zone would get new name servers,
+# and those are set by hand as NS records in Cloudflare.
+resource "google_dns_managed_zone" "public" {
+  name        = replace(var.domain, ".", "-")
+  dns_name    = "${var.domain}."
+  description = "Public zone for environment endpoints."
+  visibility  = "public"
+  labels      = local.labels
 
   depends_on = [google_project_service.required]
 }

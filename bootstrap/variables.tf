@@ -8,6 +8,11 @@ variable "region" {
   type        = string
 }
 
+variable "domain" {
+  description = "Subdomain delegated to Cloud DNS, without a trailing dot. The parent domain stays on Cloudflare."
+  type        = string
+}
+
 variable "environments" {
   description = "Environments that receive their own GitHub Actions deployer service account."
   type        = set(string)
