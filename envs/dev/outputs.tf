@@ -3,6 +3,26 @@ output "network_id" {
   value       = module.network.network_id
 }
 
+output "secret_names" {
+  description = "Secret ID per short name."
+  value       = module.secrets.secret_names
+}
+
+output "data_bucket" {
+  description = "Name of the data bucket."
+  value       = module.storage.bucket_name
+}
+
+output "pubsub" {
+  description = "Pub/Sub topic and subscription names."
+  value = {
+    documents_topic          = module.queue.documents_topic
+    documents_subscription   = module.queue.documents_subscription
+    dead_letter_topic        = module.queue.dead_letter_topic
+    dead_letter_subscription = module.queue.dead_letter_subscription
+  }
+}
+
 output "service_account_emails" {
   description = "Service account email per microservice."
   value       = module.iam.service_account_emails
