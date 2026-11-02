@@ -19,10 +19,22 @@ healthCheckCidrs:
   - 35.191.0.0/16
   - 130.211.0.0/22
 
+# database: mounts the database CA certificate.
+# googleAccess: gets a Google service account, and egress to Google APIs and the database.
+# public: served by the Gateway on the hostname Terraform publishes for this service.
 services:
   api:
-    expose: true
-  worker: {}
-  dlq-handler: {}
+    database: true
+    googleAccess: true
+    public: true
+  worker:
+    database: true
+    googleAccess: true
+  dlq-handler:
+    database: true
+    googleAccess: true
   reporter:
-    expose: true
+    database: true
+    googleAccess: true
+  web:
+    public: true

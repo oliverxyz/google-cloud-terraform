@@ -4,10 +4,10 @@ from google.cloud import pubsub_v1
 
 from api.app import create_app
 from api.config import Settings
-from api.rate_limit import RateLimiter
 from api.store import Store
 from common.config import configure_logging
 from common.db import create_pool, ensure_schema
+from common.rate_limit import RateLimiter
 from common.secrets import read_secret
 
 PUBLISH_TIMEOUT_SECONDS = 30

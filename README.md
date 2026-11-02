@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/oliverxyz/google-cloud-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/oliverxyz/google-cloud-terraform/actions/workflows/ci.yml)
 
-A private GKE Autopilot platform with four Python microservices, built with Terraform and
+A private GKE Autopilot platform with five Python microservices, built with Terraform and
 designed to be temporary: an environment comes up from nothing with one command, gets verified
 end to end, and is deleted completely.
 
@@ -14,13 +14,14 @@ end to end, and is deleted completely.
 
 ```mermaid
 flowchart TB
-    client([Client]) -- "HTTPS 443, bearer token" --> lb["Regional external load balancer<br/>Madrid, created by GKE Gateway"]
+    client([Client or browser]) -- "HTTPS 443" --> lb["Regional external load balancer<br/>Madrid, created by GKE Gateway"]
     gha([GitHub Actions]) -- "Workload Identity Federation" --> ar[Artifact Registry]
     gha -- "helm, through the DNS endpoint" --> cp[GKE control plane]
 
     subgraph vpc["VPC: no external IPs, no Cloud NAT"]
         direction TB
         subgraph gke["GKE Autopilot, private nodes, namespace platform"]
+            web[web]
             api[api]
             reporter[reporter]
             worker[worker]
@@ -29,7 +30,10 @@ flowchart TB
         psc["Private Service Connect endpoint<br/>own subnet, egress firewall allows only tcp:5432"]
     end
 
-    lb --> api
+    lb -- "cloud.oliverolsson.xyz" --> web
+    lb -- "api.dev.cloud.oliverolsson.xyz" --> api
+    web -- "requests with the visitor's token" --> api
+    web -. "health checks" .-> reporter & worker & dlq
     api -- HTTP --> reporter
     api & worker & dlq & reporter -- "TLS, port 5432" --> psc
     psc --> sql[("Cloud SQL for PostgreSQL<br/>no public IP")]
@@ -45,7 +49,7 @@ flowchart TB
     pubsub -- "after 5 failed deliveries" --> dlq
     worker -- create files --> gcs
     reporter -- "read files, create report" --> gcs
-    gke -. read secrets .-> sm
+    api & worker & dlq & reporter -. read secrets .-> sm
 ```
 
 Request flow:
@@ -59,6 +63,9 @@ Request flow:
 4. `api` calls `reporter` over internal HTTP. `reporter` reads the database and the files, then
    writes a summary file.
 
+`web` is a console for the rest. Anyone can see whether each service is up. To send test requests,
+a visitor types the API token into the page, and `web` forwards it to `api`, which checks it.
+
 ## Design decisions
 
 | Decision | Reason | Alternative considered |
@@ -71,6 +78,7 @@ Request flow:
 | Write-only Terraform arguments for secrets | Generated passwords never reach Terraform state | `random_password`: simpler, but the value stays in state |
 | DNS endpoint for `kubectl` | IAM-authorized access with no bastion, and IP endpoints stay off | Bastion host or authorized networks |
 | Subdomain delegated to Cloud DNS | The domain is registered with Cloudflare, which requires its own name servers, so only a subdomain can move | Records in Cloudflare managed by Terraform: needs an API token |
+| API token typed into the web page | `web` holds no secret, so a public page cannot write anything by itself. The token lives only in the open tab | Token stored on the server: anyone could write to the system. Google login through IAP: visitors would need to be on a list |
 | Deployer accounts limited by RBAC | Each account gets only connect access at project level, and its permissions exist in one namespace of one cluster | `roles/container.developer` on the project: would allow dev credentials to reach prod |
 | GitHub Actions deploys, Terraform runs by hand | CI holds no infrastructure credentials and has no access to state | Terraform in CI: more automation, more risk in a public repository |
 
@@ -82,11 +90,16 @@ Request flow:
   This was tested by disabling each rule in turn: without the allow rule port 5432 closes, and
   without the deny rule port 3307 opens. NetworkPolicies add default deny inside the namespace.
 - **Identity:** Workload Identity everywhere and no service account keys. Each service has its own
-  account, with roles granted on individual resources rather than on the project.
+  account, with roles granted on individual resources rather than on the project. `web` needs no
+  Google access, so it has no Google account at all, and NetworkPolicies block its way to the
+  database and to Google APIs.
 - **Secrets:** Secret Manager with a replica in the deployment region only. Values are absent from
   Terraform state and from this repository. `db-admin-password` is readable by no service.
-- **Public API:** only `api` is exposed, on HTTPS only. All endpoints except `/healthz` need a
-  token. Requests are rate limited per client and bodies are limited to 128 KiB.
+- **Public surface:** only `api` and `web` are exposed, on HTTPS only. All `api` endpoints except
+  `/healthz` need a token. Requests are rate limited per client and bodies are limited to 128 KiB.
+- **Web page:** without a token it shows only each service's name and state. It runs no inline or
+  third-party code under a strict Content Security Policy, shows responses as text and forwards
+  only a fixed list of `api` paths. The token is not stored by the browser or by `web`.
 - **Containers:** non-root, read-only root filesystem, all capabilities dropped.
 - **GitHub Actions:** third-party actions are pinned by commit SHA. Federation tokens are issued
   only for the `main` branch of this repository, checked by numeric owner ID.
@@ -100,7 +113,7 @@ bootstrap/              APIs, Terraform state bucket, DNS zone, GitHub Actions i
 modules/                database, deploy_config, gke, iam, ingress, network, queue, registry,
                         secrets, storage
 envs/dev/               Root configuration of an environment
-services/               api, worker, dlq_handler, reporter, shared common package, tests
+services/               api, worker, dlq_handler, reporter, web, shared common package, tests
 charts/platform/        Helm chart. env/<service>.yaml holds the environment of each service
 scripts/                bootstrap.sh, up.sh, verify.sh, down.sh, deploy.sh, check-orphans.sh
 .github/workflows/      ci.yml: checks only. deploy.yml: manual application deployment
@@ -154,13 +167,14 @@ DEPLOY_LOCAL=1 ./scripts/up.sh dev
 
 `verify.sh` covers: HTTPS with a valid certificate, rejection without a token, port 80 not served,
 ordered processing of revisions, one file per revision, the dead-letter path, the report, the
-database port from inside a Pod, closed port 3307 and internet access, isolation between services
-and the rate limit.
+database port from inside a Pod, closed port 3307 and internet access, isolation between services,
+the rate limit, and the web page: its security policy, the status of all services, requests with
+and without a token, and that it cannot reach the database or the internet.
 
-## Try the API
+## Try it
 
-The token is read from Secret Manager, and `api.dev.cloud.oliverolsson.xyz` answers only while the
-environment is up:
+While the environment is up, the console is at `https://cloud.oliverolsson.xyz`, and the API at
+`https://api.dev.cloud.oliverolsson.xyz`. The token for both is read from Secret Manager:
 
 ```bash
 TOKEN="$(gcloud secrets versions access latest --secret dev-api-token)"
@@ -192,7 +206,8 @@ agreed plan.
 | SSD | 10 GB | 10 GB | 20 GB |
 | Backups | no | no | yes, in Madrid |
 | Replicas per service | 1 | 1 | 2 |
-| Hostname | `api.dev.cloud.oliverolsson.xyz` | `api.test.cloud.oliverolsson.xyz` | `api.cloud.oliverolsson.xyz` |
+| API hostname | `api.dev.cloud.oliverolsson.xyz` | `api.test.cloud.oliverolsson.xyz` | `api.cloud.oliverolsson.xyz` |
+| Web hostname | `cloud.oliverolsson.xyz` | `web.test.cloud.oliverolsson.xyz` | moves here from dev: `cloud.oliverolsson.xyz` |
 | Address ranges | `10.10.0.0/16` | `10.20.0.0/16` | `10.30.0.0/16` |
 
 ## Manual steps
@@ -207,7 +222,9 @@ agreed plan.
 
 - Environments hold no data worth keeping, so deletion protection is off and buckets are force
   destroyed.
-- The rate limit is per Pod, so the effective limit grows with the replica count.
+- `web` and `api` each apply the rate limit per Pod, so the effective limit grows with the replica
+  count.
+- Only one environment at a time can own `cloud.oliverolsson.xyz`. That is `dev` until `prod` exists.
 - Publishing happens after the database commit without an outbox. If it fails, the client gets
   `502` and the revision stays unprocessed.
 - A revision that reaches the dead-letter topic blocks later revisions of the same document, and

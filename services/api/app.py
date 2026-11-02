@@ -10,8 +10,8 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from api.rate_limit import RateLimiter, client_address
 from api.store import DocumentNotFound
+from common.rate_limit import RateLimiter, client_address
 
 logger = logging.getLogger(__name__)
 

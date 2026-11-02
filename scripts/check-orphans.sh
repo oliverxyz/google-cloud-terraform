@@ -64,6 +64,13 @@ check "DNS authorizations" gc certificate-manager dns-authorizations list --loca
 check "service accounts" gcloud iam service-accounts list --project "${project_id}" --filter="email~^${env_name}-" --format="value(email)"
 check "DNS records" gcloud dns record-sets list --zone="${domain//./-}" --project "${project_id}" --filter="name~${env_name}\.${domain//./\\.}\.$" --format="value(name,type)"
 
+# The web hostname may not contain the environment name, so it is looked up separately.
+web_hostname="$(sed -n 's/^web_hostname *= *"\(.*\)"/\1/p' "${root}/envs/${env_name}/terraform.tfvars" 2>/dev/null)"
+if [[ -n "${web_hostname}" ]]; then
+  check "web DNS records" gcloud dns record-sets list --zone="${domain//./-}" --project "${project_id}" \
+    --filter="name~^(_acme-challenge[^.]*\.)?${web_hostname//./\\.}\.$ AND (type=A OR type=CNAME)" --format="value(name,type)"
+fi
+
 # Private Service Connect may register endpoints here, but only with the API enabled.
 if gcloud services list --enabled --project "${project_id}" --format="value(config.name)" | grep -qx servicedirectory.googleapis.com; then
   check "Service Directory namespaces" gc service-directory namespaces list --location="${region}"

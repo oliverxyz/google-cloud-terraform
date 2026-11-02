@@ -3,6 +3,7 @@ region      = "europe-southwest1"
 environment = "dev"
 
 hostname      = "api.dev.cloud.oliverolsson.xyz"
+web_hostname  = "cloud.oliverolsson.xyz"
 dns_zone_name = "cloud-oliverolsson-xyz"
 
 network = {

@@ -7,10 +7,15 @@ cluster: dev-gke
 imagePrefix: europe-southwest1-docker.pkg.dev/example-project/dev-images
 bucket: example-project-dev-data
 ingress:
-  hostname: api.dev.example.com
-  addressName: dev-api
-  certificateName: dev-api
+  addressName: dev-public
   proxyOnlyCidr: 10.10.12.0/23
+  services:
+    api:
+      hostname: api.dev.example.com
+      certificateName: dev-api
+    web:
+      hostname: dev.example.com
+      certificateName: dev-web
 database:
   host: 10.10.8.2
   name: documents

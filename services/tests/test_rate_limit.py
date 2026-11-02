@@ -1,4 +1,4 @@
-from api.rate_limit import RateLimiter, client_address
+from common.rate_limit import RateLimiter, client_address
 
 
 class Clock:

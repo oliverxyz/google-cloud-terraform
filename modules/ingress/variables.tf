@@ -4,13 +4,13 @@ variable "environment" {
 }
 
 variable "region" {
-  description = "Region of the load balancer address and certificate."
+  description = "Region of the load balancer address and certificates."
   type        = string
 }
 
-variable "hostname" {
-  description = "Public hostname of the API, without a trailing dot."
-  type        = string
+variable "hostnames" {
+  description = "Public hostname per service, without a trailing dot. All of them share one load balancer."
+  type        = map(string)
 }
 
 variable "dns_zone_name" {

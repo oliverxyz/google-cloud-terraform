@@ -117,8 +117,11 @@ module "ingress" {
 
   environment   = var.environment
   region        = var.region
-  hostname      = var.hostname
   dns_zone_name = var.dns_zone_name
+  hostnames = {
+    api = var.hostname
+    web = var.web_hostname
+  }
 }
 
 module "deploy_config" {
@@ -136,10 +139,9 @@ module "deploy_config" {
     imagePrefix = module.registry.image_prefix
     bucket      = module.storage.bucket_name
     ingress = {
-      hostname        = module.ingress.hostname
-      addressName     = module.ingress.address_name
-      certificateName = module.ingress.certificate_name
-      proxyOnlyCidr   = var.network.proxy_only_cidr
+      addressName   = module.ingress.address_name
+      proxyOnlyCidr = var.network.proxy_only_cidr
+      services      = module.ingress.services
     }
     database = {
       host           = module.database.endpoint_ip

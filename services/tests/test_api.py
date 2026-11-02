@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.app import create_app
-from api.rate_limit import RateLimiter
 from api.store import DocumentNotFound
+from common.rate_limit import RateLimiter
 
 TOKEN = "test-token"
 AUTH = {"Authorization": f"Bearer {TOKEN}"}

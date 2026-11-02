@@ -20,7 +20,7 @@ gcloud container clusters get-credentials "${env_name}-gke" \
   --location "${region}" --project "${project_id}" --dns-endpoint
 
 # Image name uses the Kubernetes name, the Dockerfile lives in the Python package.
-for pair in api:api worker:worker dlq-handler:dlq_handler reporter:reporter; do
+for pair in api:api worker:worker dlq-handler:dlq_handler reporter:reporter web:web; do
   name="${pair%%:*}"
   package="${pair##*:}"
   docker build -f "${root}/services/${package}/Dockerfile" -t "${image_prefix}/${name}:${tag}" "${root}/services"

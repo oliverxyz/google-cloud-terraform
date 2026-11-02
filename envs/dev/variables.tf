@@ -18,6 +18,11 @@ variable "hostname" {
   type        = string
 }
 
+variable "web_hostname" {
+  description = "Public hostname of the web interface. It must belong to the DNS zone."
+  type        = string
+}
+
 variable "dns_zone_name" {
   description = "Name of the Cloud DNS zone created in bootstrap."
   type        = string

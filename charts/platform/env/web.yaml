@@ -1,0 +1,6 @@
+API_URL: http://api:8080
+WORKER_URL: http://worker:8080
+DLQ_HANDLER_URL: http://dlq-handler:8080
+REPORTER_URL: http://reporter:8080
+RATE_LIMIT_PER_SECOND: {{ .Values.rateLimit.perSecond | quote }}
+RATE_LIMIT_BURST: {{ .Values.rateLimit.burst | quote }}

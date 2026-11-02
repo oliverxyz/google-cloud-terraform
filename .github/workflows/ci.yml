@@ -42,7 +42,7 @@ jobs:
       - run: pytest
       - name: Build images
         run: |
-          for service in api worker dlq_handler reporter; do
+          for service in api worker dlq_handler reporter web; do
             docker build -f "${service}/Dockerfile" -t "ci/${service}" .
           done
 

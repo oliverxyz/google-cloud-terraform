@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Service console</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Service console</h1>
+
+      <section aria-labelledby="status-title">
+        <h2 id="status-title">Service status</h2>
+        <ul id="status" class="status-list"></ul>
+        <p id="status-note" class="note">Checking…</p>
+      </section>
+
+      <section aria-labelledby="token-title">
+        <h2 id="token-title">API token</h2>
+        <p class="note">
+          Required for the requests below. It stays in this tab until you close or reload it, and
+          is not saved.
+        </p>
+        <label for="token">Token</label>
+        <input id="token" type="password" autocomplete="off" spellcheck="false" />
+      </section>
+
+      <section aria-labelledby="requests-title">
+        <h2 id="requests-title">Test requests</h2>
+
+        <form id="create-form">
+          <h3>Create a document</h3>
+          <label for="title">Title</label>
+          <input id="title" maxlength="200" value="demo" required />
+          <label for="content">Content</label>
+          <textarea id="content" rows="3" maxlength="65536">hello</textarea>
+          <label class="check">
+            <input id="simulate-failure" type="checkbox" />
+            Fail on purpose, to follow the dead-letter path (takes a few minutes)
+          </label>
+          <button type="submit">Create</button>
+        </form>
+
+        <form id="document-form">
+          <h3>Work with a document</h3>
+          <label for="document-id">Document ID</label>
+          <input id="document-id" spellcheck="false" required />
+          <label for="revision">New revision content</label>
+          <textarea id="revision" rows="2" maxlength="65536">next revision</textarea>
+          <div class="buttons">
+            <button type="submit">Get status</button>
+            <button type="button" id="add-revision">Add revision</button>
+          </div>
+        </form>
+
+        <div>
+          <h3>Build a report</h3>
+          <button type="button" id="report">Build report</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="response-title">
+        <h2 id="response-title">Response</h2>
+        <p id="response-status" class="note" aria-live="polite">No requests yet.</p>
+        <pre id="response"></pre>
+      </section>
+    </main>
+  </body>
+</html>

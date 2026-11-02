@@ -29,7 +29,12 @@ output "cluster" {
 
 output "api_url" {
   description = "Public URL of the API."
-  value       = "https://${module.ingress.hostname}"
+  value       = "https://${var.hostname}"
+}
+
+output "web_url" {
+  description = "Public URL of the web interface."
+  value       = "https://${var.web_hostname}"
 }
 
 output "image_prefix" {

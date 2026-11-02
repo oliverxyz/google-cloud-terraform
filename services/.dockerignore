@@ -5,5 +5,6 @@
 !worker/
 !dlq_handler/
 !reporter/
+!web/
 **/__pycache__/
 **/Dockerfile
