@@ -6,8 +6,8 @@ A private GKE Autopilot platform with five Python microservices, built with Terr
 designed to be temporary: an environment comes up from nothing with one command, gets verified
 end to end, and is deleted completely.
 
-**Status:** `dev` is implemented and its full up, verify and down cycle has been run. `test` and
-`prod` are planned and do not exist yet; their planned sizes are listed under
+**Status:** the full up, verify and down cycle has been run on `dev`. `test` and `prod` are
+configured with the same modules but have not been run yet; their sizes are listed under
 [Environments](#environments).
 
 ## Architecture
@@ -30,8 +30,8 @@ flowchart TB
         psc["Private Service Connect endpoint<br/>own subnet, egress firewall allows only tcp:5432"]
     end
 
-    lb -- "cloud.oliverolsson.xyz" --> web
-    lb -- "api.dev.cloud.oliverolsson.xyz" --> api
+    lb -- "web hostname" --> web
+    lb -- "API hostname" --> api
     web -- "requests with the visitor's token" --> api
     web -. "health checks" .-> reporter & worker & dlq
     api -- HTTP --> reporter
@@ -112,7 +112,7 @@ a visitor types the API token into the page, and `web` forwards it to `api`, whi
 bootstrap/              APIs, Terraform state bucket, DNS zone, GitHub Actions identity
 modules/                database, deploy_config, gke, iam, ingress, network, queue, registry,
                         secrets, storage
-envs/dev/               Root configuration of an environment
+envs/{dev,test,prod}/   Root configurations, identical except for values and the state prefix
 services/               api, worker, dlq_handler, reporter, web, shared common package, tests
 charts/platform/        Helm chart. env/<service>.yaml holds the environment of each service
 scripts/                bootstrap.sh, up.sh, verify.sh, down.sh, deploy.sh, check-orphans.sh
@@ -173,7 +173,7 @@ and without a token, and that it cannot reach the database or the internet.
 
 ## Try it
 
-While the environment is up, the console is at `https://cloud.oliverolsson.xyz`, and the API at
+While `dev` is up, the console is at `https://web.dev.cloud.oliverolsson.xyz`, and the API at
 `https://api.dev.cloud.oliverolsson.xyz`. The token for both is read from Secret Manager:
 
 ```bash
@@ -197,26 +197,26 @@ connection goes to the endpoint IP on port 5432 with `sslmode=verify-ca`.
 
 ## Environments
 
-Configuration is shared through modules. Only `dev` exists today; the other two columns are the
-agreed plan.
+Configuration is shared through modules. Environments differ only in these values and in their
+state prefix, and they can run at the same time.
 
-| | dev | test (planned) | prod (planned) |
+| | dev | test | prod |
 | --- | --- | --- | --- |
-| Cloud SQL machine | `db-f1-micro` | `db-g1-small` | 1 vCPU, 3.75 GiB, HA |
+| Cloud SQL machine | `db-f1-micro` | `db-g1-small` | `db-custom-1-3840` (1 vCPU, 3.75 GiB), HA |
 | SSD | 10 GB | 10 GB | 20 GB |
 | Backups | no | no | yes, in Madrid |
 | Replicas per service | 1 | 1 | 2 |
 | API hostname | `api.dev.cloud.oliverolsson.xyz` | `api.test.cloud.oliverolsson.xyz` | `api.cloud.oliverolsson.xyz` |
-| Web hostname | `cloud.oliverolsson.xyz` | `web.test.cloud.oliverolsson.xyz` | moves here from dev: `cloud.oliverolsson.xyz` |
+| Web hostname | `web.dev.cloud.oliverolsson.xyz` | `web.test.cloud.oliverolsson.xyz` | `cloud.oliverolsson.xyz` |
 | Address ranges | `10.10.0.0/16` | `10.20.0.0/16` | `10.30.0.0/16` |
 
 ## Manual steps
 
 - Signing in: `gcloud auth login`, `gcloud auth application-default login`, `gh auth login`.
 - Adding the NS records to Cloudflare, once.
-- Using this repository with another project: change `bootstrap/terraform.tfvars`,
-  `envs/dev/terraform.tfvars`, the backend bucket in `envs/dev/versions.tf`, and the project values
-  in `.github/workflows/deploy.yml`.
+- Using this repository with another project: change `bootstrap/terraform.tfvars`, the
+  `terraform.tfvars` and the backend bucket in `versions.tf` of each environment, and the project
+  values in `.github/workflows/deploy.yml`.
 
 ## Assumptions and known limits
 
@@ -224,7 +224,6 @@ agreed plan.
   destroyed.
 - `web` and `api` each apply the rate limit per Pod, so the effective limit grows with the replica
   count.
-- Only one environment at a time can own `cloud.oliverolsson.xyz`. That is `dev` until `prod` exists.
 - Publishing happens after the database commit without an outbox. If it fails, the client gets
   `502` and the revision stays unprocessed.
 - A revision that reaches the dead-letter topic blocks later revisions of the same document, and
