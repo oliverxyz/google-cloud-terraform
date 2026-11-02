@@ -8,6 +8,11 @@ output "service_account_members" {
   value       = { for name, account in google_service_account.service : name => account.member }
 }
 
+output "service_account_ids" {
+  description = "Service account resource ID per microservice."
+  value       = { for name, account in google_service_account.service : name => account.id }
+}
+
 output "nodes_service_account_email" {
   description = "Service account email of the GKE nodes."
   value       = google_service_account.nodes.email

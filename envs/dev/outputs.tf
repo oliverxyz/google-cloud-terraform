@@ -18,6 +18,20 @@ output "database" {
   }
 }
 
+output "cluster" {
+  description = "GKE cluster name, location and application namespace."
+  value = {
+    name      = module.gke.cluster_name
+    location  = module.gke.cluster_location
+    namespace = module.gke.namespace
+  }
+}
+
+output "image_prefix" {
+  description = "Prefix of image references in Artifact Registry."
+  value       = module.registry.image_prefix
+}
+
 output "data_bucket" {
   description = "Name of the data bucket."
   value       = module.storage.bucket_name

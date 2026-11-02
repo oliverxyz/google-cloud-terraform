@@ -55,6 +55,34 @@ module "database" {
   depends_on = [module.secrets]
 }
 
+module "registry" {
+  source = "../../modules/registry"
+
+  project_id  = var.project_id
+  environment = var.environment
+  region      = var.region
+
+  reader_member = module.iam.nodes_service_account_member
+  # Created in bootstrap, because GitHub Actions has to outlive the environment.
+  writer_member = "serviceAccount:deployer-${var.environment}@${var.project_id}.iam.gserviceaccount.com"
+}
+
+module "gke" {
+  source = "../../modules/gke"
+
+  environment                 = var.environment
+  region                      = var.region
+  network_id                  = module.network.network_id
+  subnet_id                   = module.network.gke_subnet_id
+  pods_range_name             = module.network.pods_range_name
+  services_range_name         = module.network.services_range_name
+  nodes_service_account_email = module.iam.nodes_service_account_email
+  workload_identities         = module.iam.service_account_ids
+
+  # Nodes need their role before they start, or the first Pods fail to start.
+  depends_on = [module.iam]
+}
+
 module "storage" {
   source = "../../modules/storage"
 
