@@ -24,16 +24,32 @@ token="$(gcloud secrets versions access latest --secret "${env_name}-api-token" 
 # The token goes through a file descriptor, so it does not appear in the process list.
 api() { curl -sS --max-time 30 -K <(printf 'header = "Authorization: Bearer %s"\n' "${token}") "$@"; }
 post() { api -X POST -H 'Content-Type: application/json' -d "$2" "${base}$1"; }
-field() { python3 -c "import json,sys;print(json.load(sys.stdin).get(sys.argv[1]))" "$1"; }
+# Prints nothing for a response that is not JSON, the check that follows reports the failure.
+field() {
+  python3 -c "
+import json,sys
+try:
+    print(json.load(sys.stdin).get(sys.argv[1]))
+except ValueError:
+    pass" "$1"
+}
 
 echo "--- waiting for HTTPS on ${hostname}, a new certificate takes a while"
+# A new certificate reaches the load balancer proxies one by one, so a single good answer
+# proves little: the next request may still get a TLS handshake failure.
 ready=no
-for _ in $(seq 1 180); do
+streak=0
+for _ in $(seq 1 600); do
   if [[ "$(curl -s -o /dev/null --max-time 10 -w '%{http_code}' "${base}/healthz")" == "200" ]]; then
+    streak=$((streak + 1))
+  else
+    streak=0
+  fi
+  if ((streak >= 20)); then
     ready=yes
     break
   fi
-  sleep 10
+  sleep 3
 done
 check "HTTPS answers with a valid certificate" "${ready}" yes
 [[ "${ready}" == "yes" ]] || exit 1
@@ -45,6 +61,11 @@ check "port 80 is not served" "${http_code}" 000
 
 echo "--- pipeline and ordering"
 document="$(post /documents '{"title":"verify","content":"first"}' | field id)"
+if [[ -z "${document}" ]]; then
+  fail "document is created"
+  echo "RESULT: stopped, the API does not accept documents"
+  exit 1
+fi
 post "/documents/${document}/revisions" '{"content":"second"}' >/dev/null
 post "/documents/${document}/revisions" '{"content":"third"}' >/dev/null
 processed=""
