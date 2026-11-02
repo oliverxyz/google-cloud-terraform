@@ -149,10 +149,11 @@ check "port 80 on web is not served" \
   "$(curl -s -o /dev/null --max-time 10 -w '%{http_code}' "http://${web_hostname}/")" 000
 
 echo "--- rate limit"
+# Requests go in parallel: one at a time they are too slow to exhaust the limit of several Pods.
+codes="$(seq 1 300 | xargs -P 30 -I{} curl -s -o /dev/null --max-time 10 -w '%{http_code}\n' "${base}/documents/x")"
+echo "responses: $(sort <<<"${codes}" | uniq -c | awk '{printf "%s x%s  ", $2, $1}')"
 limited=no
-for _ in $(seq 1 60); do
-  [[ "$(curl -s -o /dev/null --max-time 10 -w '%{http_code}' "${base}/documents/x")" == "429" ]] && limited=yes && break
-done
+grep -qx 429 <<<"${codes}" && limited=yes
 check "burst of requests is limited" "${limited}" yes
 
 echo
