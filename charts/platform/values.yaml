@@ -1,0 +1,28 @@
+# Infrastructure values (project, addresses, names) come from the <env>-deploy-config
+# secret that Terraform publishes. Sizes per environment are in values-<env>.yaml.
+# The environment of each service is in env/<service>.yaml.
+imageTag: ""
+
+replicas: 1
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+rateLimit:
+  perSecond: 5
+  burst: 20
+
+# Google health check probes do not come from the proxy-only subnet.
+healthCheckCidrs:
+  - 35.191.0.0/16
+  - 130.211.0.0/22
+
+services:
+  api:
+    expose: true
+  worker: {}
+  dlq-handler: {}
+  reporter:
+    expose: true

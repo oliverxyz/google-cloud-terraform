@@ -2,6 +2,9 @@ project_id  = "infrastructure-test-plan"
 region      = "europe-southwest1"
 environment = "dev"
 
+hostname      = "api.dev.cloud.oliverolsson.xyz"
+dns_zone_name = "cloud-oliverolsson-xyz"
+
 network = {
   nodes_cidr      = "10.10.0.0/22"
   services_cidr   = "10.10.4.0/22"

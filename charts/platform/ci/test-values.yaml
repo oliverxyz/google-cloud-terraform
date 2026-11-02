@@ -1,0 +1,30 @@
+# Placeholder infrastructure values, used only to lint and render the chart in CI.
+imageTag: test
+projectId: example-project
+region: europe-southwest1
+environment: dev
+cluster: dev-gke
+imagePrefix: europe-southwest1-docker.pkg.dev/example-project/dev-images
+bucket: example-project-dev-data
+ingress:
+  hostname: api.dev.example.com
+  addressName: dev-api
+  certificateName: dev-api
+  proxyOnlyCidr: 10.10.12.0/23
+database:
+  host: 10.10.8.2
+  name: documents
+  user: app
+  passwordSecret: dev-db-password
+  caCert: placeholder
+apiTokenSecret: dev-api-token
+pubsub:
+  endpoint: europe-southwest1-pubsub.googleapis.com:443
+  topic: dev-documents
+  subscription: dev-documents-worker
+  deadLetterSubscription: dev-documents-dlq-handler
+serviceAccounts:
+  api: dev-api@example-project.iam.gserviceaccount.com
+  worker: dev-worker@example-project.iam.gserviceaccount.com
+  dlq-handler: dev-dlq-handler@example-project.iam.gserviceaccount.com
+  reporter: dev-reporter@example-project.iam.gserviceaccount.com

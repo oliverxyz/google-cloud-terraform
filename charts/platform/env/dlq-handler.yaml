@@ -1,0 +1,8 @@
+PROJECT_ID: {{ .Values.projectId | quote }}
+DB_HOST: {{ .Values.database.host | quote }}
+DB_NAME: {{ .Values.database.name | quote }}
+DB_USER: {{ .Values.database.user | quote }}
+DB_PASSWORD_SECRET: {{ .Values.database.passwordSecret | quote }}
+DB_CA_CERT_PATH: /etc/db-ca/ca.pem
+PUBSUB_ENDPOINT: {{ .Values.pubsub.endpoint | quote }}
+PUBSUB_SUBSCRIPTION: {{ .Values.pubsub.deadLetterSubscription | quote }}

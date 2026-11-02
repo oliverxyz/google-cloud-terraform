@@ -28,6 +28,11 @@ variable "password_secret_id" {
   type        = string
 }
 
+variable "admin_password_secret_id" {
+  description = "ID of the Secret Manager secret with the password of the built-in postgres user. A version must already exist."
+  type        = string
+}
+
 variable "database_version" {
   description = "Cloud SQL database version."
   type        = string

@@ -1,0 +1,42 @@
+name: Deploy
+
+# Deploys the application into an environment that already exists. Terraform is run by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy to
+        required: true
+        type: choice
+        options: [dev, test, prod]
+
+permissions:
+  contents: read
+  # Lets the job get a short-lived Google token. There are no stored keys.
+  id-token: write
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+
+env:
+  PROJECT_ID: infrastructure-test-plan
+  WORKLOAD_IDENTITY_PROVIDER: projects/937739589175/locations/global/workloadIdentityPools/github-actions/providers/github
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The Google account of an environment accepts only jobs of the same GitHub Environment.
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: deployer-${{ inputs.environment }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          install_components: gke-gcloud-auth-plugin
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.1
+      - run: scripts/deploy.sh "${{ inputs.environment }}" "${{ github.sha }}"

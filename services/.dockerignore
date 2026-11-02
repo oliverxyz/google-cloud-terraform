@@ -1,0 +1,9 @@
+*
+!requirements.lock
+!common/
+!api/
+!worker/
+!dlq_handler/
+!reporter/
+**/__pycache__/
+**/Dockerfile

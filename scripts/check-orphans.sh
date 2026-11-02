@@ -27,7 +27,7 @@ check() {
     failed=1
   elif [[ -n "${output}" ]]; then
     echo "LEFT   ${label}:"
-    sed 's/^/         /' <<<"${output}"
+    printf '         %s\n' "${output//$'\n'/$'\n'         }"
     left=1
   else
     echo "ok     ${label}"

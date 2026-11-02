@@ -13,6 +13,16 @@ variable "environment" {
   type        = string
 }
 
+variable "hostname" {
+  description = "Public hostname of the API. It must belong to the DNS zone."
+  type        = string
+}
+
+variable "dns_zone_name" {
+  description = "Name of the Cloud DNS zone created in bootstrap."
+  type        = string
+}
+
 variable "network" {
   description = "Address ranges of the environment VPC. They must not overlap between environments."
   type = object({

@@ -27,6 +27,11 @@ output "cluster" {
   }
 }
 
+output "api_url" {
+  description = "Public URL of the API."
+  value       = "https://${module.ingress.hostname}"
+}
+
 output "image_prefix" {
   description = "Prefix of image references in Artifact Registry."
   value       = module.registry.image_prefix

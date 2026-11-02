@@ -62,6 +62,21 @@ resource "google_sql_user" "app" {
   deletion_policy = "ABANDON"
 }
 
+ephemeral "google_secret_manager_secret_version" "admin_password" {
+  secret = var.admin_password_secret_id
+}
+
+# Cloud SQL creates this user itself, without a password. Managing it makes the state explicit.
+resource "google_sql_user" "admin" {
+  name                = "postgres"
+  instance            = google_sql_database_instance.this.name
+  password_wo         = ephemeral.google_secret_manager_secret_version.admin_password.secret_data
+  password_wo_version = 1
+
+  # Removed together with the instance. Cloud SQL does not allow dropping this role.
+  deletion_policy = "ABANDON"
+}
+
 resource "google_compute_address" "endpoint" {
   name         = "${var.environment}-db-endpoint"
   region       = var.region
