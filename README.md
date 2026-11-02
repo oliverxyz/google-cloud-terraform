@@ -6,8 +6,8 @@ A private GKE Autopilot platform with five Python microservices, built with Terr
 designed to be temporary: an environment comes up from nothing with one command, gets verified
 end to end, and is deleted completely.
 
-**Status:** the full up, verify and down cycle has been run on `dev`. `test` and `prod` are
-configured with the same modules but have not been run yet; their sizes are listed under
+**Status:** the full up, verify and down cycle has been run on `dev`. `test` and `prod` use
+the same modules and have also been run successfully; their sizes are listed under
 [Environments](#environments).
 
 ## Architecture
